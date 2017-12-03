@@ -147,7 +147,7 @@ function Manager(package, buildinfo)
 			],
 			server:
 			{
-				'Project F Official Lobby':'http://lobby.projectf.hk'
+				'Project F Official Lobby':'http://f-lobby.herokuapp.com/'
 			},
 			support_sound:false
 		};
