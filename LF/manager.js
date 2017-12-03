@@ -126,7 +126,7 @@ function Manager(package, buildinfo)
 			player:[]
 		};
 		
-		var settings_format_version=1.00002;
+		var settings_format_version=1.03;
 		settings=
 		{
 			version:settings_format_version,
