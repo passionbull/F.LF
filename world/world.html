@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<head>
+<meta http-equiv='content-type' content='text/html; charset=UTF-8'>
+<meta name='viewport' content='width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<title>Steem world</title>
+</head>
+
+<body>
+
+<div class='LFroot'>
+  <div class='container'>
+
+    <div class='window'>
+      <div class='frontpage'>
+        <div class='frontpage_content'>
+        </div>
+      </div>
+      <div class='settings'>
+      </div>
+      <div class='network_game'>
+      </div>
+      <div class='gameplay'>
+        <canvas class='canvas' width='0' height='0'></canvas>
+        <div class='top_status'></div>
+        <div class='bottom_status'>
+          <input class='fps' value='0fps'></input>
+          <span class='footnote'></span>
+        </div>
+        <div class='dialog_holder'>
+          <div class='pause_message'></div>
+          <div class='summary_dialog'></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+<script type="text/javascript" src="colyseus.js"></script>
+
+<!-- 
+<script>
+  var client = new Colyseus.Client('ws://localhost:2657');
+  var room = client.join("state_handler");
+  console.log("Hey guy");
+
+      // listen to patches coming from the server
+      room.listen("players/:id", function(change) {
+        if (change.operation === "add") {
+          console.log("player add");
+          console.log("id: "+change.path.id);
+          console.log("x: "+change.value.x);
+          console.log("y: "+change.value.y);
+
+        } else if (change.operation === "remove") {
+          console.log("player remove");
+          console.log("id: "+change.path.id);
+        }
+      });
+
+      room.listen("players/:id/:axis", function(change) {
+          console.log("player move");
+          console.log("player value: "+change.path.axis+" - " +change.value);
+      });
+
+      function send (data) {
+        room.send(data);
+      }
+
+</script> -->
+
+</div>
+<pre id='flf-config' style='display:none'>
+{"root":"../","package":"../LF2_19"}
+</pre>
+
+<script data-main="world.js" src="../third_party/require.js"></script>
+</body>
