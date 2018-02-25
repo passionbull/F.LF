@@ -23,7 +23,7 @@ function Manager(package, buildinfo)
 		controllers,
 		window_state;
 	
-	var client = new Colyseus.Client('ws://localhost:2657');
+	var client = new Colyseus.Client('ws://45.76.217.116:2657');
 	var room = client.join("state_handler");
 	console.log("Hey guy");
 
@@ -70,10 +70,10 @@ function Manager(package, buildinfo)
 			if( window.innerWidth<global.application.window.outer_width ||
 				window.innerHeight<global.application.window.outer_height )
 			{
-				if( !window_state.maximized)
-				{
-					util.div('maximize_button').onclick();
-				}
+				// if( !window_state.maximized)
+				// {
+				// 	util.div('maximize_button').onclick();
+				// }
 			}
 			resizer();
 		}
@@ -121,15 +121,15 @@ function Manager(package, buildinfo)
 			},
 			support_sound:false
 		};
-		if( Fsupport.localStorage)
-		{
-			if( Fsupport.localStorage.getItem('F.LF/settings'))
-			{
-				var obj = JSON.parse(Fsupport.localStorage.getItem('F.LF/settings'));
-				if( obj.version===settings_format_version)
-					settings = obj;
-			}
-		}
+		// if( Fsupport.localStorage)
+		// {
+		// 	if( Fsupport.localStorage.getItem('F.LF/settings'))
+		// 	{
+		// 		var obj = JSON.parse(Fsupport.localStorage.getItem('F.LF/settings'));
+		// 		if( obj.version===settings_format_version)
+		// 			settings = obj;
+		// 	}
+		// }
 		for( var i=0; i<settings.player.length; i++)
 		{
 			session.player[i] = settings.player[i];
@@ -797,14 +797,15 @@ function Manager(package, buildinfo)
 					use:true,
 					name:'Player1',
 					type:'human',
-					selected:8,
+					selected:Math.floor((Math.random() * 8) ),
 					team:1
 				},
 				{
 					use:true,
-					name:'Player2',
-					type:'human',
-					selected:3,
+					name:'Jacob Yu',
+					type:'computer',
+					selected:Math.floor((Math.random() * 8) ),
+					selected_AI:2,
 					team:2
 				}
 			],

@@ -48,6 +48,8 @@ Global)
 		}
 		if( !setting.set) setting.set={};
 
+
+		$.gameover_state_force = false;
 		$.gameover_state = false;
 		$.randomseed = $.new_randomseed();
 		$.create_scenegraph();
@@ -233,7 +235,7 @@ Global)
 		$.background.TU();
 		$.sound.TU();
 		$.show_hp();
-		//$.check_gameover();
+		$.check_gameover();
 		var AI_frameskip = 3; //AI script runs at a lower framerate, and is still very reactive
 		if( $.time.t%AI_frameskip===0)
 			for( var i=0; i<$.AIscript.length; i++)
@@ -341,6 +343,7 @@ Global)
 			//positioning
 			var pos=$.background.get_pos($.random(),$.random());
 			char.set_pos( pos.x, pos.y, pos.z);
+			char.health.mp=char.health.mp_full;
 			var uid = $.scene.add(char);
 			$.character[uid] = char;
 			//pane
@@ -477,7 +480,7 @@ Global)
 	match.prototype.gameover=function()
 	{
 		var $=this;
-		if( $.gameover_state)
+		if( $.gameover_state || $.gameover_state_force)
 		{
 			var info = [];
 			var teams = {};
@@ -506,6 +509,8 @@ Global)
 			$.manager.summary.set_time(new Date(dur*1000).toISOString().substr(14,5));
 			$.manager.summary.show();
 			$.manager.sound.play('1/m_end');
+
+			/// add some reward work..
 		}
 		else
 		{
@@ -516,7 +521,7 @@ Global)
 	match.prototype.key=function(K,down)
 	{
 		var $=this;
-		if( $.gameover_state)
+		if( $.gameover_state|| $.gameover_state_force)
 		{
 			if( down)
 			if( $.time.t > $.gameover_state + 60)
@@ -600,7 +605,7 @@ Global)
 	match.prototype.F4=function()
 	{
 		var $=this;
-		$.gameover_state = true;
+		$.gameover_state_force = true;
 		$.gameover();
 		//$.destroy();
 		//$.manager.match_end();
@@ -610,7 +615,9 @@ Global)
 	{
 		var $=this;
 		$.destroy();
-		$.manager.match_end();
+		//$.manager.match_end();
+		$.manager.start_world();
+
 	}
 
 
@@ -670,14 +677,14 @@ Global)
 						switch (I)
 						{
 							case 'F1':
-								if( !$.time.paused)
-									$.time.paused=true;
-								else
-									$.time.paused=false;
+								// if( !$.time.paused)
+								// 	$.time.paused=true;
+								// else
+								// 	$.time.paused=false;
 							break;
 
 							case 'F2':
-								$.time.paused='F2';
+								// $.time.paused='F2';
 							break;
 
 							case 'esc':
@@ -704,28 +711,28 @@ Global)
 								$.destroy_weapons();
 							break;
 						}
-						if( (I==='F1' || I==='F2') && $.time.paused)
-						{
-							$.manager.overlay_mess.hide();
-							setTimeout(show_pause,4); //so that the 'pause' message blinks
-						}
-						else if( !$.time.paused)
-						{
-							$.manager.overlay_mess.hide();
-						}
-						if( opaused !== $.time.paused)
-						{	//state change
-							if( $.time.paused)
-							{
-								if( funcon.paused)
-									funcon.paused(true);
-							}
-							else
-							{
-								if( funcon.paused)
-									funcon.paused(false);
-							}
-						}
+						// if( (I==='F1' || I==='F2') && $.time.paused)
+						// {
+						// 	$.manager.overlay_mess.hide();
+						// 	setTimeout(show_pause,4); //so that the 'pause' message blinks
+						// }
+						// else if( !$.time.paused)
+						// {
+						// 	$.manager.overlay_mess.hide();
+						// }
+						// if( opaused !== $.time.paused)
+						// {	//state change
+						// 	if( $.time.paused)
+						// 	{
+						// 		if( funcon.paused)
+						// 			funcon.paused(true);
+						// 	}
+						// 	else
+						// 	{
+						// 		if( funcon.paused)
+						// 			funcon.paused(false);
+						// 	}
+						// }
 					}
 				}
 			});
