@@ -241,6 +241,7 @@ function Manager(package, buildinfo)
 
 		window.addEventListener('resize', onresize, false);
 		onresize();
+		//writeYourID();
 	}
 	this.UI_list=
 	{
@@ -802,7 +803,7 @@ function Manager(package, buildinfo)
 				},
 				{
 					use:true,
-					name:'Jacob Yu',
+					name:'SteemFighter',
 					type:'computer',
 					selected:Math.floor((Math.random() * 8) ),
 					selected_AI:2,
@@ -819,6 +820,14 @@ function Manager(package, buildinfo)
 	this.create();
 }
 
+function writeYourID() {
+    var txt;
+    var person = prompt("Please enter your steem ID: ", "jacobyu");
+    if (person == null || person == "") {
+        
+    } else {
+    }
+}
 //util
 function show(div)
 {
