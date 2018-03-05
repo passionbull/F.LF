@@ -4,10 +4,11 @@ function(global,network,Soundpack,Match,util,Touchcontroller,Random,
 Futil,Fsprite,Fsprite_dom,Fanimator,Fcontroller,Fresourcemap,Fsupport)
 {
 
+var sc2 = new SC2wrapper();
+
 function Manager(package, buildinfo)
 {
 	var param = util.location_parameters();
-	
 	var sel = package.data.UI.data.character_selection;
 	var char_list,
 		img_list,
@@ -22,11 +23,12 @@ function Manager(package, buildinfo)
 		session,
 		controllers,
 		window_state;
+
+	
 	
 	var client = new Colyseus.Client('ws://45.76.217.116:2657');
 	var room = client.join("state_handler");
-	console.log("Hey guy");
-
+	
 	room.listen("players/:id", function(change) {
 	if (change.operation === "add") {
 		console.log("player add");
@@ -56,8 +58,8 @@ function Manager(package, buildinfo)
 
 	this.create=function()
 	{
+		sc2.getUser();
 		require(['core/css!'+package.path+'UI/UI.css'],function(){});
-		
 		//window sizing
 		window_state=
 		{
@@ -1151,6 +1153,25 @@ summary_dialog.prototype.set_info=function(info)
 		[ Icon, Name, Kill, Attack, HP Lost, MP Usage, Picking, Status ]...
 	]
 	*/
+	
+	console.log(info[0][7]);
+	if( info[0][7].indexOf('Win')!==-1) // WIN
+	{
+		console.log('you are win');
+		sc2.voteLatestPost('steemfighter', 100);
+		//sc2.commentLatestPost('steemfighter','당신은 @steemfighter를 이겼습니다.');
+		sc2.updateDB(1);
+
+	}
+	else
+	{
+		console.log('you are lose');
+		sc2.voteLatestPost('steemfighter', 500);
+		//sc2.commentLatestPost('steemfighter','당신은 @steemfighter에게 졌습니다.');
+		sc2.updateDB(0);
+
+	}
+
 	this.set_rows(info.length);
 	for( var i=0; i<info.length; i++)
 	{

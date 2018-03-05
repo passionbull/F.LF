@@ -9,20 +9,15 @@
     <a href="#" class="login">Login</a>
     <a href="#" class="logout">Logout</a>
     <script type="text/javascript" src="https://cdn.steemjs.com/lib/latest/steem.min.js"></script>
+    <script src="jquery.min.js"></script>
     <script src="sc2.min.js"></script>
-    <script src="steemfunc.js"></script>
+    <script src="sc2wrapper.js"></script>
 
     <script>
 
-
-      startSteemConnect();
-      // api.vote(voter, author, permlink, weight, function (err, res) {
-      //   console.log(err, res)
-      // });
-
-      // api.comment(parentAuthor, parentPermlink, author, permlink, title, body, jsonMetadata, function (err, res) {
-      //   console.log(err, res)
-      // });
+      var sc2 = new SC2wrapper();
+      sc2.getUser();
+      sc2.voteLatestPost('jacobyu',1000);
 
     </script>
   </body>

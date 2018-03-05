@@ -1,3 +1,4 @@
+
 function getParameter(paramName) {
     var searchString = window.location.search.substring(1);
     var params = searchString.split('&');
@@ -35,7 +36,7 @@ function startSteemConnect()
     console.log('Hello authTimestamp : '+authTimestamp);
 
 
-        if (currentTimestamp - authTimestamp >= expiresIn) {
+    if(currentTimestamp - authTimestamp >= expiresIn) {
             // 액세스토큰 유효기한 만료
             localStorage.removeItem('access_token');
             localStorage.removeItem('expires_in');
@@ -54,7 +55,9 @@ function startSteemConnect()
       // 로그인 링크 설정
       var link = api.getLoginURL();
       loginButton.setAttribute('href', link);
-        } else {
+    } 
+    else 
+    {
       // 액세스토큰 유효
       if (accessToken !== null) {
         // 이전에 저장된 액세스토큰이 있는 경우
@@ -105,13 +108,35 @@ function startSteemConnect()
 
     if (accessToken) {
       var username = localStorage.getItem('username');
-      console.log('Hi, ', username);
+      console.log('Login success, ', username);
+
       api.me(function (err, res) {
           console.log(err, res)
       });
+      voteToSteemUser(api, 'millionfist');
+      ///commentToSteem(api);
     }
+
 }
 
+function request_insert_user_db()
+{
+    var user ={name: 'jacobyu', email:'wnsl5684@gmail.com'};
+    console.log(user);
+
+    $.ajax(
+    {   type: 'GET', 
+        url : "http://127.0.0.1/get_user_info.php",
+        data: user, dataType:"text",
+        success : function(data, status, xhr) 
+        { console.log('success '+data); },
+        error: function(jqXHR, textStatus, errorThrown) 
+        { 
+            console.log('error '+jqXHR.responseText);
+            console.log('error '+textStatus);
+        } 
+    });    
+}
 
 function getlatestPostonBlog(yourID)
 {
@@ -132,6 +157,51 @@ function getlatestPostonBlog(yourID)
     });
     
 }
+
+function commentToSteem(api)
+{
+    var author = 'jacobyu';
+    var parentPermlink = '4hudee';
+    var permlink = 're-' + parentPermlink + '-' + Math.floor(Date.now() / 1000);
+    var jsonMetadata =
+    {
+        "tags": ['test']
+    };
+
+    api.comment(author, parentPermlink, author, permlink, '', 'I wrote it using sc2.', jsonMetadata, function (err, res) {
+      console.log(err, res)
+    });
+}
+
+function voteToSteemUser(api, author)
+{
+    var voter = 'jacobyu';
+    //var author = 'millionfist';
+    var weight = 100;
+
+    steem.api.getBlogEntries(author, 9999, 10, function(err, data)
+    { 
+        
+        //console.log(err, data);
+        for( i =0; i<data.length;i++)
+        {
+            if(data[i].author == author)
+            {
+                url = 'https://busy.org/@'+data[i].author+'/'+data[i].permlink
+                console.log(url);
+                
+                api.vote(voter, author, data[i].permlink, weight, function (err, res) {
+                  console.log(err, res)
+                });
+
+                break;
+            }
+        }
+    });
+
+
+}
+
 //getlatestPostonBlog('jacobyu');
 // api.vote(voter, author, permlink, weight, function (err, res) {
 //   console.log(err, res)

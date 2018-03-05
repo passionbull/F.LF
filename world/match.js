@@ -689,7 +689,7 @@ Global)
 
 							case 'esc':
 							case 'F4':
-								$.F4();
+								//$.F4();
 							break;
 
 							case 'F6':
