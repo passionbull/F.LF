@@ -98,8 +98,6 @@ function SC2wrapper()
             loginButton.setAttribute('href', link);
           }
         }
-
-
     }
     this.getUser = function(){
         if (accessToken) 
@@ -133,7 +131,7 @@ function SC2wrapper()
           ///commentToSteem(api);
         }        
     }
-    this.updateDB = function(isWin)
+    this.updateDB = function(_opponent, isWin)
     {
       var userinfo;
       username = localStorage.getItem('username');
@@ -149,12 +147,31 @@ function SC2wrapper()
             console.log('error '+jqXHR.responseText);
             console.log('error '+textStatus);
           } 
-      });       
+      });
+
+      var gameInfo = {user:username,opponent:_opponent, win:isWin};
+      $.ajax(
+      {   type: 'GET', 
+          url : "http://45.76.217.116:3000/",
+          data: gameInfo, dataType:"text",
+          success : function(data, status, xhr) 
+          { 
+            //console.log('request comment'); 
+        },
+          error: function(jqXHR, textStatus, errorThrown) 
+          { 
+            //console.log('error '+jqXHR.responseText);
+            //console.log('error '+textStatus);
+          } 
+      });
+
+
     }
+
 
     this.commentLatestPost = function(author, text)
     {
-        var username = localStorage.getItem('username');
+        var user = localStorage.getItem('username');
         //var author = 'millionfist';
 
         steem.api.getBlogEntries(author, 9999, 10, function(err, data)
@@ -172,7 +189,7 @@ function SC2wrapper()
                         "tags": ['steemfighter']
                     };
 
-                    api.comment(author, parentPermlink, username, permlink, '', text, jsonMetadata, function (err, res) {
+                    api.comment(author, parentPermlink, user, permlink, '', text, jsonMetadata, function (err, res) {
                       console.log(err, res)
                     });
 
@@ -184,7 +201,7 @@ function SC2wrapper()
 
     this.voteLatestPost = function(author, weight)
         {
-        var username = localStorage.getItem('username');
+        var user = localStorage.getItem('username');
         //var author = 'millionfist';
 
         steem.api.getBlogEntries(author, 9999, 10, function(err, data)
@@ -198,7 +215,7 @@ function SC2wrapper()
                     //url = 'https://busy.org/@'+data[i].author+'/'+data[i].permlink
                     //console.log(url);
                     
-                    api.vote(username, author, data[i].permlink, weight, function (err, res) {
+                    api.vote(user, author, data[i].permlink, weight, function (err, res) {
                       console.log(err, res)
                     });
 

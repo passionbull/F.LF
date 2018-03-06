@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<head>
+<meta http-equiv='content-type' content='text/html; charset=UTF-8'>
+<meta name='viewport' content='width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<title>Steem Fighter</title>
+</head>
+
+<body>
+
+<div class='LFroot'>
+  <div class='container'>
+    <div class='window_caption'>
+      <div class='window_caption_title'>
+        Steem Fighter
+      </div>
+      <div class='window_caption_button_bar'>
+        <div class='maximize_button'><span class='unisym'>&#9723;</span></div>
+        <div class='ProjectFbutton'>
+          <a href='http://www.ProjectF.hk' target='_blank'>
+            <span style='font-family: Palatino Linotype, serif; font-size:16px;'>Project <i>F</i><!--&#8497;--></span>
+          </a>
+        </div>
+        <div class='ProjectFbutton'>
+          <a href="#" class="login">
+            <span style='font-family: Palatino Linotype, serif; font-size:16px;'>Login</span>
+          </a>
+          <a href="#" class="logout">
+            <span style='font-family: Palatino Linotype, serif; font-size:16px;'>Logout</span>
+          </a>
+        </div>
+    </div>
+
+    <div class='window'>
+      <div class='frontpage'>
+        <div class='frontpage_content'>
+        </div>
+      </div>
+      <div class='settings'>
+      </div>
+      <div class='network_game'>
+      </div>
+      <div class='gameplay'>
+        <canvas class='canvas' width='0' height='0'></canvas>
+        <div class='top_status'></div>
+        <div class='bottom_status'>
+          <input class='fps' value='0fps'></input>
+          <span class='footnote'></span>
+        </div>
+        <div class='dialog_holder'>
+          <div class='pause_message'></div>
+          <div class='summary_dialog'></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+  <div class='touch_control_holder'></div>
+
+  
+  
+<script type="text/javascript" src="steem/jquery.min.js"></script>
+<script type="text/javascript" src="steem/colyseus.js"></script>
+<script type="text/javascript" src="steem/steem.min.js"></script>
+<script type="text/javascript" src="steem/sc2.min.js"></script>
+<script type="text/javascript" src="steem/sc2wrapper.js"></script>
+
+
+</div>
+<pre id='flf-config' style='display:none'>
+{"root":"../","package":"../LF2_19"}
+</pre>
+
+<script data-main="world.js" src="../third_party/require.js"></script>
+</body>
