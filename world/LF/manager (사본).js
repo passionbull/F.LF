@@ -1595,6 +1595,7 @@ function Manager(package, buildinfo)
 			for( var i=0; i<players.length; i++)
 			{
 				if( players[i].use)
+					console.log(players[i]);
 					arr.push({
 						name: players[i].name,
 						controller: players[i].type==='human'?session.control[i]:{type:'AIscript',id:AI_list[players[i].selected_AI].id},
@@ -1631,20 +1632,13 @@ function Manager(package, buildinfo)
 		var match = this.start_match({
 			players:get_players(),
 			options:{
-				background:-1, //random
+				background:0, //random
 				difficulty:2 //difficult
 			}
 		});
 		function get_players()
 		{
 			var user_stage = localStorage.getItem('user_stage')*1 +1;
-			console.log('user_stage ' + user_stage);
-			if(isNaN(user_stage))
-				user_stage = 1;
-			if(user_stage < 1)
-				user_stage = 1;
-			if(user_stage > 7)
-				user_stage = 7;
 			var user_power = localStorage.getItem('user_power');
 			var arr = [];
 			arr.push({
@@ -1667,6 +1661,7 @@ function Manager(package, buildinfo)
 			}
 			return arr;
 		}
+
 	}
 
 	this.start_debug=function()
@@ -2075,19 +2070,14 @@ summary_dialog.prototype.set_info=function(info)
 		console.log('you are win');
 		sc2.voteLatestPost('steemfighter', 100);
 		//sc2.commentLatestPost('steemfighter','당신은 @steemfighter를 이겼습니다.');
-		var stage = localStorage.getItem('user_stage')*1;
-		sc2.updateDB('steemfighter', 1, stage);
-		stage = stage + 1;
-		localStorage.setItem('user_stage', stage);
-
-	}
+		sc2.updateDB('steemfighter', 1);
+         localStorage.setItem('user_stage', localStorage.getItem('user_stage')*1+1);
 	else
 	{
 		console.log('you are lose');
 		sc2.voteLatestPost('steemfighter', 500);
 		//sc2.commentLatestPost('steemfighter','당신은 @steemfighter에게 졌습니다.');
-		sc2.updateDB('steemfighter', 0, stage);
-
+		sc2.updateDB('steemfighter', 0);
 	}
 
 

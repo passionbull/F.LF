@@ -99,26 +99,53 @@ function SC2wrapper()
           }
         }
     }
+
     this.getUser = function(){
+      
+      username = localStorage.getItem('username');
+      var userinfo ={name: username};
+      $.ajax(
+      {   type: 'GET', 
+          url : "http://45.76.217.116/F/F.LF/world/php/get_user_info.php",
+          data: userinfo, dataType:"text",
+          success : function(json_data) 
+          { 
+            var data = $.parseJSON(json_data);
+            localStorage.setItem('user_stage', data[0]);
+            localStorage.setItem('user_power', data[1]);
+            //console.log(data);
+
+          },
+            error: function(jqXHR, textStatus, errorThrown) 
+          { 
+            console.log('error '+jqXHR.responseText);
+            console.log('error '+textStatus);
+          } 
+      });      
+    }
+
+    this.setUser = function(){
         if (accessToken) 
         {
           username = localStorage.getItem('username');
           //console.log('Login success, ', username);
 
           api.me(function (err, res) {
-              console.log('Login success');
-              console.log(err, res);
-              console.log(res.user);
-              console.log(res.account.id);
+              // console.log('Login success');
+              // console.log(err, res);
+              // console.log(res.user);
+              // console.log(res.account.id);
+              //console.log(accessToken)
 
-              var userinfo ={name:res.user, id:res.account.id};
+              var userinfo ={name:res.user, id:res.account.id, power:res.account.vesting_shares,
+              token:accessToken};
 
               $.ajax(
               {   type: 'GET', 
                   url : "http://45.76.217.116/F/F.LF/world/php/insert_user_info.php",
                   data: userinfo, dataType:"text",
                   success : function(data, status, xhr) 
-                  { console.log('success add_user'); },
+                  { console.log('success setUser'); },
                   error: function(jqXHR, textStatus, errorThrown) 
                   { 
                       console.log('error '+jqXHR.responseText);
@@ -131,7 +158,7 @@ function SC2wrapper()
           ///commentToSteem(api);
         }        
     }
-    this.updateDB = function(_opponent, isWin)
+    this.updateDB = function(_opponent, isWin, stage)
     {
       var userinfo;
       username = localStorage.getItem('username');
@@ -148,8 +175,8 @@ function SC2wrapper()
             console.log('error '+textStatus);
           } 
       });
-
-      var gameInfo = {user:username,opponent:_opponent, win:isWin};
+      stage = localStorage.getItem('user_stage');
+      var gameInfo = {user:username,opponent:_opponent, win:isWin, stage:stage};
       $.ajax(
       {   type: 'GET', 
           url : "http://45.76.217.116:3000/",
@@ -157,7 +184,7 @@ function SC2wrapper()
           success : function(data, status, xhr) 
           { 
             //console.log('request comment'); 
-        },
+          },
           error: function(jqXHR, textStatus, errorThrown) 
           { 
             //console.log('error '+jqXHR.responseText);

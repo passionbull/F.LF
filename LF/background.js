@@ -333,14 +333,15 @@ define(['core/util','LF/sprite-select','core/support','LF/global'],function(Futi
 				var avgX=0,
 					facing=0,
 					numPlayers=0;
-				for( var i in $.char)
-				{
-					avgX+= $.char[i].ps.x;
-					facing+= $.char[i].dirh();
-					numPlayers++;
-				}
-				if( numPlayers>0)
-					avgX/=numPlayers;
+				// for( var i in $.char)
+				// {
+				// 	avgX+= $.char[i].ps.x;
+				// 	facing+= $.char[i].dirh();
+				// 	numPlayers++;
+				// }
+				// if( numPlayers>0)
+				// 	avgX/=numPlayers;
+				avgX = $.char[1].ps.x;
 				//var xLimit= (facing*screenW)/(numPlayers*6) - (halfW + avgX);
 				//  his original equation has one error, it should be 24 regardless of number of players
 				var xLimit= (facing*screenW/24)+(avgX-halfW);
