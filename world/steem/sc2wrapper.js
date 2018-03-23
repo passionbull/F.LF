@@ -106,7 +106,7 @@ function SC2wrapper()
       var userinfo ={name: username};
       $.ajax(
       {   type: 'GET', 
-          url : "http://45.76.217.116/F/F.LF/world/php/get_user_info.php",
+          url : "http://45.76.217.116/php/get_user_info.php",
           data: userinfo, dataType:"text",
           success : function(json_data) 
           { 
@@ -142,7 +142,7 @@ function SC2wrapper()
 
               $.ajax(
               {   type: 'GET', 
-                  url : "http://45.76.217.116/F/F.LF/world/php/insert_user_info.php",
+                  url : "http://45.76.217.116/php/insert_user_info.php",
                   data: userinfo, dataType:"text",
                   success : function(data, status, xhr) 
                   { console.log('success setUser'); },
@@ -165,7 +165,7 @@ function SC2wrapper()
       userinfo = {name:username, win:isWin};
       $.ajax(
       {   type: 'GET', 
-          url : "http://45.76.217.116/F/F.LF/world/php/update_user_info.php",
+          url : "http://45.76.217.116/php/update_user_info.php",
           data: userinfo, dataType:"text",
           success : function(data, status, xhr) 
           { console.log('success update_DB'); },
@@ -175,24 +175,22 @@ function SC2wrapper()
             console.log('error '+textStatus);
           } 
       });
-      stage = localStorage.getItem('user_stage');
-      var gameInfo = {user:username,opponent:_opponent, win:isWin, stage:stage};
-      $.ajax(
-      {   type: 'GET', 
-          url : "http://45.76.217.116:3000/",
-          data: gameInfo, dataType:"text",
-          success : function(data, status, xhr) 
-          { 
-            //console.log('request comment'); 
-          },
-          error: function(jqXHR, textStatus, errorThrown) 
-          { 
-            //console.log('error '+jqXHR.responseText);
-            //console.log('error '+textStatus);
-          } 
-      });
-
-
+      // stage = localStorage.getItem('user_stage');
+      // var gameInfo = {user:username,opponent:_opponent, win:isWin, stage:stage};
+      // $.ajax(
+      // {   type: 'GET', 
+      //     url : "http://45.76.217.116:3000/",
+      //     data: gameInfo, dataType:"text",
+      //     success : function(data, status, xhr) 
+      //     { 
+      //       //console.log('request comment'); 
+      //     },
+      //     error: function(jqXHR, textStatus, errorThrown) 
+      //     { 
+      //       //console.log('error '+jqXHR.responseText);
+      //       //console.log('error '+textStatus);
+      //     } 
+      // });
     }
 
 

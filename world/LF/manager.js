@@ -26,7 +26,7 @@ function Manager(package, buildinfo)
 	
 	this.create=function()
 	{
-		sc2.getUser();
+		sc2.getUser(); // get user_stage, user_power
 		sc2.setUser();
 		require(['core/css!'+package.path+'UI/UI.css'],function(){});
 		
@@ -1637,14 +1637,14 @@ function Manager(package, buildinfo)
 		});
 		function get_players()
 		{
-			var user_stage = localStorage.getItem('user_stage')*1 +1;
-			console.log('user_stage ' + user_stage);
-			if(isNaN(user_stage))
-				user_stage = 1;
-			if(user_stage < 1)
-				user_stage = 1;
-			if(user_stage > 7)
-				user_stage = 7;
+			// var user_stage = localStorage.getItem('user_stage')*1 +1;
+			// console.log('user_stage ' + user_stage);
+			// if(isNaN(user_stage))
+			// 	user_stage = 1;
+			// if(user_stage < 1)
+			// 	user_stage = 1;
+			// if(user_stage > 7)
+			// 	user_stage = 7;
 			var user_power = localStorage.getItem('user_power');
 			var arr = [];
 			arr.push({
@@ -1654,7 +1654,7 @@ function Manager(package, buildinfo)
 						selected:Math.floor((Math.random() * 8) ),
 						team:1
 					});
-			for( var i=0; i<user_stage; i++)
+			for( var i=0; i<1; i++)
 			{
 				arr.push({
 					use:true,
@@ -2074,18 +2074,20 @@ summary_dialog.prototype.set_info=function(info)
 	{
 		console.log('you are win');
 		sc2.voteLatestPost('steemfighter', 100);
-		//sc2.commentLatestPost('steemfighter','당신은 @steemfighter를 이겼습니다.');
-		var stage = localStorage.getItem('user_stage')*1;
+		sc2.commentLatestPost('steemfighter','@steemfighter를 이겼습니다.');
+		// var stage = localStorage.getItem('user_stage')*1;
+		var stage = 1;
 		sc2.updateDB('steemfighter', 1, stage);
-		stage = stage + 1;
-		localStorage.setItem('user_stage', stage);
+		// stage = stage + 1;
+		// localStorage.setItem('user_stage', stage);
 
 	}
 	else
 	{
 		console.log('you are lose');
 		sc2.voteLatestPost('steemfighter', 500);
-		//sc2.commentLatestPost('steemfighter','당신은 @steemfighter에게 졌습니다.');
+		sc2.commentLatestPost('steemfighter','@steemfighter에게 졌습니다.');
+		var stage = 1;
 		sc2.updateDB('steemfighter', 0, stage);
 
 	}
