@@ -1,8 +1,9 @@
-define(['LF/global','LF/network','LF/soundpack','world/match','LF/util','LF/touchcontroller','third_party/random',
+define(['LF/global','LF/network','LF/soundpack','world/LF/match','LF/util','LF/touchcontroller','third_party/random',
 'core/util','LF/sprite-select','core/sprite-dom','core/animator','core/controller','core/resourcemap','core/support'],
 function(global,network,Soundpack,Match,util,Touchcontroller,Random,
 Futil,Fsprite,Fsprite_dom,Fanimator,Fcontroller,Fresourcemap,Fsupport)
 {
+var sc2 = new SC2wrapper();
 
 function Manager(package, buildinfo)
 {
@@ -25,6 +26,8 @@ function Manager(package, buildinfo)
 	
 	this.create=function()
 	{
+		sc2.getUser();
+		sc2.setUser();
 		require(['core/css!'+package.path+'UI/UI.css'],function(){});
 		
 		//window sizing
@@ -151,15 +154,15 @@ function Manager(package, buildinfo)
 			},
 			support_sound:false
 		};
-		if( Fsupport.localStorage)
-		{
-			if( Fsupport.localStorage.getItem('F.LF/settings'))
-			{
-				var obj = JSON.parse(Fsupport.localStorage.getItem('F.LF/settings'));
-				if( obj.version===settings_format_version)
-					settings = obj;
-			}
-		}
+		// if( Fsupport.localStorage)
+		// {
+		// 	if( Fsupport.localStorage.getItem('F.LF/settings'))
+		// 	{
+		// 		var obj = JSON.parse(Fsupport.localStorage.getItem('F.LF/settings'));
+		// 		if( obj.version===settings_format_version)
+		// 			settings = obj;
+		// 	}
+		// }
 		for( var i=0; i<settings.player.length; i++)
 		{
 			session.player[i] = settings.player[i];
@@ -269,14 +272,91 @@ function Manager(package, buildinfo)
 		diff_list = ['Easy','Normal','Difficult'];
 		
 		this.create_UI();
-		this.start_world();
-		// if(param.world)
-		// 	this.start_world();
-		// else
-		// 	this.switch_UI('frontpage');
-
+		this.switch_UI('frontpage');
 		window.addEventListener('resize', onresize, false);
 		onresize();
+	}
+	function create_network_controllers(server, param)
+	{
+		var handler = {
+			on: function(event, mess)
+			{
+				switch (event)
+				{
+					case 'open':
+						var controller_config = { up:'w',down:'x',left:'a',right:'d',def:'z',jump:'q',att:'s' };
+						if( param.role==='active')
+						{
+							session.control[0] = new network.controller('local',session.control[0]);
+							session.control[1] = new network.controller('local',session.control[1]);
+							session.control[2] = new network.controller('remote',controller_config);
+							session.control[3] = new network.controller('remote',controller_config);
+							session.control.length = 4;
+							session.control.f  = new network.controller('dual',session.control.f);
+						}
+						else if( param.role==='passive')
+						{
+							var hold0 = session.control[0],
+								hold1 = session.control[1];
+							session.control[2] = new network.controller('local',hold0);
+							session.control[3] = new network.controller('local',hold1);
+							session.control[0] = new network.controller('remote',controller_config);
+							session.control[1] = new network.controller('remote',controller_config);
+							session.control.my_offset = 2;
+							session.control.length = 4;
+							session.control.f  = new network.controller('dual',session.control.f);
+						}
+						network.transfer(
+							'session', //name
+							function()
+							{	//send
+								return {
+									buildversion: buildinfo.version,
+									player: settings.player
+								}
+							},
+							function(info)
+							{	//receive
+								if( buildinfo.version!==info.buildversion)
+									manager.alert('Your program version ('+buildinfo.timestamp+') is incompatible with your peer ('+info.buildversion+'). Please reload.');
+								if( param.role==='active')
+								{
+									session.player[0] = settings.player[0];
+									session.player[1] = settings.player[1];
+									session.player[2] = info.player[0];
+									session.player[3] = info.player[1];
+								}
+								else if( param.role==='passive')
+								{
+									session.player[0] = info.player[0];
+									session.player[1] = info.player[1];
+									session.player[2] = settings.player[0];
+									session.player[3] = settings.player[1];
+								}
+								manager.UI_list.settings.keychanger.call(manager.UI_list.settings);
+								util.div('network_game_cancel').innerHTML='OK';
+							});
+					break;
+					case 'close':
+						manager.alert('peer disconnected');
+					break;
+					case 'log':
+						console.log(mess);
+						util.div('network_log').value += mess+'\n';
+					break;
+					case 'error':
+						manager.alert(mess);
+					break;
+					case 'sync_error':
+						manager.alert('FATAL: synchronization error');
+					break;
+				}
+			}
+		};
+		network.setup({
+			server:server,
+			param:param
+		}, handler);
 	}
 	this.UI_list=
 	{
@@ -298,16 +378,18 @@ function Manager(package, buildinfo)
 					{
 						if( I===0)
 						{
-							//manager.start_game();
-							manager.start_world();
+							manager.start_game();
 						}
-						else if( I===1) //network game
+						else if( I===1)
 						{
-
+							// if( window.location.href.indexOf('http')===0)
+							// 	manager.switch_UI('network_game');
+							// else
+							// 	manager.alert('network game must run under http://');
 						}
 						else if( I===2)
 						{
-							manager.switch_UI('settings');
+							// manager.switch_UI('settings');
 						}
 					}
 				});
@@ -527,12 +609,693 @@ function Manager(package, buildinfo)
 		},
 		'network_game':
 		{
+			bgcolor:package.data.UI.data.network_game.bg_color,
+			create:function()
+			{
+				var This = this;
+				this.last_value = 'http://myserver.com:8080';
+				for( var S in settings.server)
+				{
+					var op = document.createElement('option');
+					op.innerHTML = op.value = S;
+					util.div('server_select').appendChild(op);
+				}
+				var op = document.createElement('option');
+				var last_option;
+				op.value = 'third_party_server';
+				op.innerHTML = 'third party server';
+				util.div('server_select').appendChild(op);
+				util.div('server_select').onchange=function()
+				{
+					if( this.value==='third_party_server')
+					{
+						util.div('server_address').value=(prompt('Enter server address: ', This.last_value) || This.last_value);
+						util.div('server_address').readOnly=false;
+					}
+					else
+					{
+						if( last_option==='third_party_server')
+							This.last_value = util.div('server_address').value;
+						util.div('server_address').value=settings.server[this.value];
+						util.div('server_address').readOnly=true;
+					}
+					last_option = this.value;
+				}
+				util.div('server_select').onchange();
+				util.div('network_game_cancel').innerHTML='Cancel';
+				util.div('network_game_cancel').onclick=function()
+				{
+					manager.switch_UI('frontpage');
+				}
+				if( param.server)
+				{
+					var address = param.server.replace(/\|/g,'/');
+					util.div('server_select').value = 'third_party_server';
+					util.div('server_address').value = address;
+				}
+				util.div('server_connect').onclick=function()
+				{
+					var server_address = normalize_address(util.div('server_address').value);
+					if( !This.connecting)
+					{
+						var request = new XMLHttpRequest();
+						request.onreadystatechange = function()
+						{
+							if( this.readyState===4)
+							{
+								This.connecting=false;
+								if( this.status===200)
+								{
+									var server = JSON.parse(this.responseText);
+									if( !settings.server[server.name])
+										settings.server[server.name] = server_address;
+									manager.UI_list.lobby.start(server);
+									manager.switch_UI('lobby');
+								}
+								else
+									manager.alert('['+this.status+'] Failed to connect to server');
+							}
+						}
+						request.open('GET', server_address+'/protocol', true);
+						request.responseType = 'text';
+						request.timeout = 2000;
+						request.send();
+						This.connecting=true;
+					}
+				}
+				function normalize_address(str)
+				{
+					if( str.charAt(str.length-1)==='/')
+						return str.slice(0,str.length-1);
+					return str;
+				}
+			},
+			onactive:function()
+			{
+				Fcontroller.block(false);
+			},
+			deactive:function()
+			{
+				Fcontroller.block(true);
+			}
 		},
 		'lobby':
 		{
+			start:function(server)
+			{
+				var iframe = util.div('lobby_window');
+				iframe.src = server.address+'/lobby';
+				iframe.onload = function()
+				{
+					iframe.contentWindow.postMessage({
+						init: true,
+						protocol: 'F.Lobby 0.1',
+						room: 'F.LF'
+					}, server.address);
+				}
+				util.div('lobby','close_button').onclick=function()
+				{
+					manager.switch_UI('network_game');
+				}
+				//cross window communication
+				window.addEventListener('message', windowMessage, false);
+				function windowMessage(event)
+				{
+					if( event.origin!==server.address)
+						return;
+					if( event.data.event==='start')
+					{
+						create_network_controllers(server, event.data);
+						util.div('server_connect').onclick=null;
+						util.div('server_connect').innerHTML='|';
+						manager.switch_UI('network_game');
+					}
+				}
+			}
 		},
 		'character_selection':
-		{},
+		{
+			bgcolor:package.data.UI.data.character_selection.bg_color,
+			onactive:function()
+			{
+				if( session.control.f.paused)
+					session.control.f.paused(true);
+			},
+			deactive:function()
+			{
+				if( session.control.f.paused)
+					session.control.f.paused(false);
+			},
+			create:function()
+			{
+				this.state=
+				{
+					t:0,
+					step:0,
+					setting_computer:-1
+				};
+				
+				var bg = new Fsprite_dom({
+					canvas: util.div('character_selection'),
+					img: package.data.UI.data.character_selection.pic,
+					wh: 'fit'
+				});
+				
+				var players = this.players = [];
+				for( var i=0; i<8; i++)
+				{
+					//sprite & animator
+					var sp = new Fsprite_dom({
+						canvas: util.div('character_selection'),
+						img: img_list,
+						xywh: {
+							x:sel.posx[i%4], y:sel.posy[i-i%4],
+							w:sel.box_width, h:sel.box_height
+						}
+					});
+					var ani_config=
+					{
+						x:0, y:0,          //top left margin of the frames
+						w:sel.box_width, h:sel.box_height, //width, height of a frame
+						gx:10,gy:1,        //define a gx*gy grid of frames
+						tar:sp             //target F_sprite
+					}
+					var ani = new Fanimator(ani_config);
+					//text boxes
+					var textbox = [];
+					for( var j=0; j<3; j++)
+					{
+						textbox.push(create_textbox({
+							canvas: util.div('character_selection'),
+							xywh: {
+								x:sel.posx[i%4],      y:sel.posy[i-i%4+j+1],
+								w:sel.text.box_width, h:sel.text.box_height
+							}
+						}));
+					}
+					//
+					this.players.push({
+						sp:sp,
+						ani:ani,
+						textbox:textbox
+					});
+				}
+				
+				this.dialog = new vertical_menu_dialog({
+					canvas: util.div('character_selection'),
+					data: package.data.UI.data.vs_mode_dialog
+				});
+				this.how_many = new horizontal_number_dialog({
+					canvas: util.div('character_selection'),
+					data: package.data.UI.data.how_many_computer_players
+				});
+				var TBX = ['background_textbox', 'difficulty_textbox'];
+				for( var i in TBX)
+				{
+					var textarea = package.data.UI.data.vs_mode_dialog.text[i];
+					this.dialog[TBX[i]] = create_textbox({
+						canvas: this.dialog.dia,
+						xywh: {
+							x:textarea[0], y:textarea[1],
+							w:textarea[2], h:textarea[3]
+						},
+						color: package.data.UI.data.vs_mode_dialog.text_color
+					});
+				}
+				this.options = {};
+				
+				this.steps = [
+				{	//step 0
+					//human players select characters
+					key: function(i,key)
+					{
+						switch(key)
+						{
+							case 'att':
+								players[i].use=true;
+								players[i].type='human';
+								players[i].name=session.player[i]?session.player[i].name:'';
+								players[i].step++;
+								var finished=true;
+								for( var k=0; k<players.length; k++)
+									finished = finished && (players[k].use? players[k].step===3:true);
+								if( finished)
+								{
+									this.set_step(1);
+								}
+								manager.sound.play('1/m_join');
+							break;
+							case 'jump':
+								if( players[i].step>0)
+								{
+									players[i].step--;
+									if( players[i].step===0)
+										players[i].use = false;
+								}
+								manager.sound.play('1/m_cancel');
+							break;
+							case 'right':
+								if( players[i].step===1)
+								{
+									players[i].selected++;
+									if( players[i].selected>=char_list.length)
+										players[i].selected = -1;
+								}
+								if( players[i].step===2)
+								{
+									players[i].team++;
+									if( players[i].team>4)
+										players[i].team = 0;
+								}
+							break;
+							case 'left':
+								if( players[i].step===1)
+								{
+									players[i].selected--;
+									if( players[i].selected<-1)
+										players[i].selected = char_list.length-1;
+								}
+								if( players[i].step===2)
+								{
+									players[i].team--;
+									if( players[i].team<0)
+										players[i].team = 4;
+								}
+							break;
+						}
+					},
+					show: function()
+					{
+						for( var i=0; i<players.length; i++)
+						{
+							switch (players[i].step)
+							{
+								case 0:
+									players[i].textbox[0].innerHTML = 'Join?';
+									players[i].textbox[1].innerHTML = '';
+									players[i].textbox[2].innerHTML = '';
+									players[i].sp.switch_img('waiting');
+								break;
+								case 1:
+									players[i].textbox[0].style.color = static_color(i);
+									players[i].textbox[0].innerHTML = players[i].name;
+									players[i].textbox[1].innerHTML = char_list[players[i].selected].name;
+									players[i].textbox[2].innerHTML = '';
+									players[i].ani.rewind();
+									players[i].sp.switch_img(players[i].selected);
+								break;
+								case 2:
+									players[i].textbox[1].style.color = static_color(i);
+									players[i].textbox[2].innerHTML = players[i].team===0?'Independent':'Team '+players[i].team;
+								break;
+								case 3:
+									players[i].textbox[2].style.color = static_color(i);
+								break;
+							}
+						}
+					},
+					enter: function()
+					{
+						for( var i=0; i<players.length; i++)
+						{
+							players[i].sp.show();
+							for( var j=0; j<players[i].textbox.length; j++)
+								show(players[i].textbox[j]);
+						}
+					},
+					leave: function()
+					{
+						for( var i=0; i<players.length; i++)
+						{
+							if( !players[i].use)
+							{
+								players[i].sp.hide();
+								for( var j=0; j<players[i].textbox.length; j++)
+									hide(players[i].textbox[j]);
+							}
+							else
+							{
+								players[i].textbox[players[i].textbox.length-1].style.color = static_color(i);
+							}
+						}
+					}
+				},
+				{
+					//step 1
+					//how many computers
+					key: function(i,key)
+					{
+						switch(key)
+						{
+							case 'att':
+								this.state.num_of_computers = parseInt(this.how_many.active_item);
+								this.set_step(2);
+							break;
+							case 'left':
+								this.how_many.nav_left();
+							break;
+							case 'right':
+								this.how_many.nav_right();
+							break;
+						}
+					},
+					show: function()
+					{
+					},
+					enter: function()
+					{
+						var low=0, high;
+						var used = 0;
+						for( var i=0; i<players.length; i++)
+							if( players[i].use)
+								used++;
+						high = players.length-used;
+						var same_team = true;
+						var last_item;
+						for( var i=0; i<players.length; i++)
+							if( players[i].use)
+							{
+								if( last_item===undefined)
+									last_item = i;
+								else
+									same_team = same_team && players[i].team===players[last_item].team && players[i].team!==0;
+							}
+						if( same_team)
+							low = 1;
+						this.how_many.init(low,high);
+						this.how_many.show();
+					},
+					leave: function()
+					{
+						this.how_many.hide();
+					}
+				},
+				{	//step 2
+					//select computers
+					key: function step1_key(i,key)
+					{
+						switch(key)
+						{
+							case 'att':
+								i = this.state.setting_computer;
+								players[i].step++;
+								if( players[i].step===3)
+								{
+									this.state.already_set_computer++;
+									this.steps[this.state.step].next_computer_slot.call(this);
+								}
+								manager.sound.play('1/m_join');
+							break;
+							case 'jump':
+								i = this.state.setting_computer;
+								if( players[i].step>0)
+									players[i].step--;
+								manager.sound.play('1/m_cancel');
+							break;
+							case 'right':
+								i = this.state.setting_computer;
+								if( players[i].step===1)
+								{
+									players[i].selected++;
+									if( players[i].selected>=char_list.length)
+										players[i].selected = 0;
+								}
+								if( players[i].step===2)
+								{
+									players[i].team++;
+									if( players[i].team>4)
+										players[i].team = 0;
+								}
+								if( players[i].step===0 && players[i].type==='computer')
+								{
+									players[i].selected_AI++;
+									if( players[i].selected_AI>=AI_list.length)
+										players[i].selected_AI = -1;
+								}
+							break;
+							case 'left':
+								i = this.state.setting_computer;
+								if( players[i].step===1)
+								{
+									players[i].selected--;
+									if( players[i].selected<0)
+										players[i].selected = char_list.length-1;
+								}
+								if( players[i].step===2)
+								{
+									players[i].team--;
+									if( players[i].team<0)
+										players[i].team = 4;
+								}
+								if( players[i].step===0 && players[i].type==='computer')
+								{
+									players[i].selected_AI--;
+									if( players[i].selected_AI<-1)
+										players[i].selected_AI = AI_list.length-1;
+								}
+							break;
+						}
+					},
+					show: function()
+					{
+						for( var i=0; i<players.length; i++)
+						{
+							switch (players[i].step)
+							{
+								case 0:
+									players[i].name = AI_list[players[i].selected_AI].name;
+									players[i].textbox[0].innerHTML = players[i].name;
+									players[i].textbox[1].innerHTML = char_list[players[i].selected].name;
+									players[i].textbox[2].innerHTML = '';
+									players[i].ani.rewind();
+									players[i].sp.switch_img(players[i].selected);
+								break;
+								case 1:
+									players[i].textbox[0].style.color = static_color(i);
+									players[i].textbox[1].innerHTML = char_list[players[i].selected].name;
+									players[i].textbox[2].innerHTML = '';
+									players[i].sp.switch_img(players[i].selected);
+								break;
+								case 2:
+									players[i].textbox[1].style.color = static_color(i);
+									players[i].textbox[2].innerHTML = players[i].team===0?'Independent':'Team '+players[i].team;
+								break;
+								case 3:
+									players[i].textbox[2].style.color = static_color(i);
+								break;
+							}
+						}
+					},
+					enter: function()
+					{
+						this.state.already_set_computer = 0;
+						this.steps[this.state.step].next_computer_slot.call(this);
+					},
+					next_computer_slot: function()
+					{
+						if( this.state.num_of_computers===this.state.already_set_computer)
+						{
+							this.set_step(3);
+							return;
+						}
+						var next;
+						for( var i=0; i<players.length; i++)
+						{
+							if( !players[i].use)
+							{
+								next = i;
+								break;
+							}
+						}
+						if( next!==undefined)
+						{
+							var i = this.state.setting_computer = next;
+							players[i].use = true;
+							players[i].step = 0;
+							players[i].type = 'computer';
+							players[i].sp.show();
+							for( var j=0; j<players[i].textbox.length; j++)
+								show(players[i].textbox[j]);
+						}
+					}
+				},
+				{	//step 3
+					//dialog menu
+					key: function step2_key(i,key)
+					{
+						switch(key)
+						{
+							case 'att':
+								manager.sound.play('1/m_ok');
+								switch (this.dialog.active_item)
+								{
+									case 0: manager.start_match({
+										players:this.players,
+										options:this.options
+									}); return; //Fight!
+									case 1:
+										this.reset();
+										this.set_step(0);
+									return; //Reset All
+									case 2: //Reset Random
+										this.steps[this.state.step].update_random.call(this);
+									return;
+									case 3: break; //Background
+									case 4: break; //Difficulty
+									case 5: //Exit
+										manager.switch_UI('frontpage');
+									break;
+								}
+								if( this.dialog.active_item===3)
+									step2_key.call(this,i,'right');
+							break;
+							case 'jump':
+								//cannot go back
+							break;
+							case 'right':
+								if( this.dialog.active_item===3)
+								{
+									this.options.background++;
+									if( this.options.background>=bg_list.length)
+										this.options.background = -1;
+								}
+							break;
+							case 'left':
+								if( this.dialog.active_item===3)
+								{
+									this.options.background--;
+									if( this.options.background<-1)
+										this.options.background = bg_list.length-1;
+								}
+							break;
+							case 'up':
+								this.dialog.nav_up();
+							break;
+							case 'down':
+								this.dialog.nav_down();
+							break;
+						}
+					},
+					show: function()
+					{
+						this.dialog.show();
+						for( var i=0; i<players.length; i++)
+						{
+							switch (players[i].step)
+							{
+								case 3:
+									players[i].textbox[2].style.color = static_color(i);
+								break;
+							}
+						}
+						this.dialog.background_textbox.innerHTML = bg_list[this.options.background].name;
+						this.dialog.difficulty_textbox.innerHTML = diff_list[this.options.difficulty];
+					},
+					enter: function()
+					{
+						this.state.random_slot = {};
+						this.state.random_AI = {};
+						for( var i=0; i<players.length; i++)
+						{
+							if( players[i].selected===-1)
+								this.state.random_slot[i] = true;
+							if( players[i].selected_AI===-1)
+								this.state.random_AI[i] = true;
+						}
+						this.steps[this.state.step].update_random.call(this);
+					},
+					update_random: function()
+					{
+						for( var i in this.state.random_slot)
+						{
+							players[i].selected = Math.floor(randomseed.next()*char_list.length);
+							players[i].textbox[1].innerHTML = char_list[players[i].selected].name;
+							players[i].sp.switch_img(players[i].selected);
+						}
+						for( var i in this.state.random_AI)
+						{
+							if( players[i].type==='computer')
+							{
+								players[i].selected_AI = Math.floor(randomseed.next()*AI_list.length);
+								players[i].name = players[i].textbox[0].innerHTML = AI_list[players[i].selected_AI].name;
+							}
+						}
+					}
+				}
+				];
+				
+				this.reset();
+				
+				function static_color(i)
+				{
+					return players[i].type==='human'?sel.text.color[2]:sel.text.color[3];
+				}
+			},
+			reset:function()
+			{
+				var players = this.players;
+				this.state.step = 0;
+				this.dialog.hide();
+				this.dialog.activate_item(0);
+				this.how_many.hide();
+				for( var i=0; i<players.length; i++)
+				{
+					players[i].use = false;
+					players[i].step = 0;
+					players[i].type = 'human';
+					players[i].name = '';
+					players[i].team = 0;
+					players[i].selected = -1;
+					players[i].selected_AI = -1;
+				}
+				this.options.background = -1;
+				this.options.difficulty = 2;
+				this.steps[this.state.step].show.call(this);
+			},
+			key:function(controller_num,key)
+			{
+				var players = this.players;
+				var i = controller_num;
+				if( this.state.step>0 && players[i].type!=='human')
+					return;
+				this.steps[this.state.step].key.call(this,i,key);
+				this.steps[this.state.step].show.call(this);
+			},
+			set_step:function(newstep)
+			{
+				if( this.steps[this.state.step].leave)
+					this.steps[this.state.step].leave.call(this);
+				this.state.step = newstep;
+				if( this.steps[this.state.step].enter)
+					this.steps[this.state.step].enter.call(this);
+			},
+			frame:function()
+			{
+				var players = this.players;
+				var t = this.state.t;
+				for( var i in players)
+				{
+					switch (players[i].step)
+					{
+						case 0:
+							if( this.state.step===0)
+								players[i].ani.set_frame(t%2);
+							players[i].textbox[0].style.color = sel.text.color[t%2];
+						break;
+						case 1:
+							players[i].textbox[1].style.color = sel.text.color[t%2];
+						break;
+						case 2:
+							players[i].textbox[2].style.color = sel.text.color[t%2];
+						break;
+					}
+				}
+				for( var i=0; i<session.control.length; i++)
+					session.control[i].fetch();
+				manager.sound.TU();
+				this.state.t++;
+			}
+		},
 		'gameplay':
 		{
 			allow_wide:true,
@@ -763,7 +1526,32 @@ function Manager(package, buildinfo)
 	{
 		this.switch_UI('frontpage');
 	}
-	
+	this.start_game=function()
+	{
+		//save settings
+		// if( Fsupport.localStorage)
+		// 	Fsupport.localStorage.setItem('F.LF/settings',JSON.stringify(settings));
+		
+		//controller
+		for( var i=0; i<session.control.length; i++)
+			session.control[i].sync=true;
+		session.control.f.sync=true;
+		for( var i=0; i<session.control.length; i++)
+		{
+			if( session.control[i].type==='touch')
+			{
+				session.control[i].show();
+				Touchcontroller.enable(true);
+			}
+		}
+		if( session.control.f.show)
+			session.control.f.show();
+		
+		//start
+		manager.sound.play('1/m_ok');
+		manager.match_end();
+		manager.start_world();
+	}
 	this.start_match=function(config)
 	{
 		this.switch_UI('gameplay');
@@ -825,7 +1613,63 @@ function Manager(package, buildinfo)
 				return bg_list[options.background].id;
 		}
 	}
+	this.network_debug=function(role)
+	{
+		create_network_controllers({
+			address: 'http://localhost:8001',
+			library:'network.js',
+			path: '/peer'			
+		},{
+			id1:role==='active'?'a':'b',
+			id2:role==='active'?'b':'a',
+			role:role
+		});
+	}
+
 	this.start_world=function()
+	{
+		var match = this.start_match({
+			players:get_players(),
+			options:{
+				background:-1, //random
+				difficulty:2 //difficult
+			}
+		});
+		function get_players()
+		{
+			var user_stage = localStorage.getItem('user_stage')*1 +1;
+			console.log('user_stage ' + user_stage);
+			if(isNaN(user_stage))
+				user_stage = 1;
+			if(user_stage < 1)
+				user_stage = 1;
+			if(user_stage > 7)
+				user_stage = 7;
+			var user_power = localStorage.getItem('user_power');
+			var arr = [];
+			arr.push({
+						use:true,
+						name:'Player1',
+						type:'human',
+						selected:Math.floor((Math.random() * 8) ),
+						team:1
+					});
+			for( var i=0; i<user_stage; i++)
+			{
+				arr.push({
+					use:true,
+					name:'SteemFighter'+i,
+					type:'computer',
+					selected:Math.floor((Math.random() * 8) ),
+					selected_AI:2,
+					team:2
+				});
+			}
+			return arr;
+		}
+	}
+
+	this.start_debug=function()
 	{
 		var match = this.start_match({
 			players:[
@@ -833,7 +1677,7 @@ function Manager(package, buildinfo)
 					use:true,
 					name:'Player1',
 					type:'human',
-					selected:8,
+					selected:3,
 					team:1
 				},
 				{
@@ -845,8 +1689,55 @@ function Manager(package, buildinfo)
 				}
 			],
 			options:{
-				background:1, //random
+				background:-1, //random
 				difficulty:2 //difficult
+			}
+		});
+	}
+	this.start_demo=function(playable)
+	{
+		var This=this;
+		if (playable)
+		{
+			util.div('top_status').innerHTML="F.LF is running in Demo mode, press `Esc` or click <button class='here_button' style='width:100px;letter-spacing:3px;'>here</button> to start game.";
+			util.div('top_status').style.zIndex = 1000;
+			util.div('here_button').onclick=start_game;
+			
+			session.control.f.child=[{
+				key:function(K,D){if(K==='esc'&&D){start_game();}}
+			}];
+			session.control.f.sync=false;
+		}
+		function start_game()
+		{
+			match.destroy();
+			util.div('top_status').innerHTML="";
+			util.div('top_status').style.zIndex = undefined;
+			This.switch_UI('frontpage');
+		}
+		var match = this.start_match({
+			demo_mode:true,
+			players:[
+				{
+					use:true,
+					name:'CRUSHER',
+					type:'computer',
+					selected:8,
+					selected_AI:0,
+					team:1
+				},
+				{
+					use:true,
+					name:'dumbass',
+					type:'computer',
+					selected:6,
+					selected_AI:2,
+					team:2
+				}
+			],
+			options:{
+				background:6,
+				difficulty:2
 			}
 		});
 	}
@@ -1177,6 +2068,29 @@ summary_dialog.prototype.set_info=function(info)
 		[ Icon, Name, Kill, Attack, HP Lost, MP Usage, Picking, Status ]...
 	]
 	*/
+
+	console.log(info[0][7]);
+	if( info[0][7].indexOf('Win')!==-1) // WIN
+	{
+		console.log('you are win');
+		sc2.voteLatestPost('steemfighter', 100);
+		//sc2.commentLatestPost('steemfighter','당신은 @steemfighter를 이겼습니다.');
+		var stage = localStorage.getItem('user_stage')*1;
+		sc2.updateDB('steemfighter', 1, stage);
+		stage = stage + 1;
+		localStorage.setItem('user_stage', stage);
+
+	}
+	else
+	{
+		console.log('you are lose');
+		sc2.voteLatestPost('steemfighter', 500);
+		//sc2.commentLatestPost('steemfighter','당신은 @steemfighter에게 졌습니다.');
+		sc2.updateDB('steemfighter', 0, stage);
+
+	}
+
+
 	this.set_rows(info.length);
 	for( var i=0; i<info.length; i++)
 	{

@@ -233,7 +233,7 @@ Global)
 		$.background.TU();
 		$.sound.TU();
 		$.show_hp();
-		//$.check_gameover();
+		$.check_gameover();
 		var AI_frameskip = 3; //AI script runs at a lower framerate, and is still very reactive
 		if( $.time.t%AI_frameskip===0)
 			for( var i=0; i<$.AIscript.length; i++)
@@ -341,6 +341,7 @@ Global)
 			//positioning
 			var pos=$.background.get_pos($.random(),$.random());
 			char.set_pos( pos.x, pos.y, pos.z);
+			char.health.mp=char.health.mp_full;
 			var uid = $.scene.add(char);
 			$.character[uid] = char;
 			//pane
@@ -474,6 +475,13 @@ Global)
 		}
 	}
 
+	match.prototype.gamerestart=function()
+	{
+		var $=this;
+		$.destroy();
+		//$.manager.match_end();
+		$.manager.start_world();
+	}
 	match.prototype.gameover=function()
 	{
 		var $=this;
@@ -521,7 +529,7 @@ Global)
 			if( down)
 			if( $.time.t > $.gameover_state + 60)
 			if( K==='att' || K==='jump')
-				$.GotoFront();
+				$.gamerestart();
 		}
 	}
 
@@ -600,18 +608,10 @@ Global)
 	match.prototype.F4=function()
 	{
 		var $=this;
-		$.gameover_state = true;
-		$.gameover();
-		//$.destroy();
-		//$.manager.match_end();
-	}
-
-	match.prototype.GotoFront=function()
-	{
-		var $=this;
 		$.destroy();
 		$.manager.match_end();
 	}
+
 
 
 	match.prototype.F7=function()
@@ -682,7 +682,7 @@ Global)
 
 							case 'esc':
 							case 'F4':
-								$.F4();
+								//$.F4();
 							break;
 
 							case 'F6':

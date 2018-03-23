@@ -17,7 +17,7 @@ if( document.getElementById('flf-config'))
 }
 
 requirejs(['core/support',
-'LF/loader!'+flf_config.package,'world/manager',
+'LF/loader!'+flf_config.package,'world/LF/manager',
 'LF/util','./buildinfo.js','core/css!LF/application.css'],
 function(Fsupport,
 package,Manager,
@@ -28,6 +28,7 @@ util,buildinfo){
 		console.log = console.error = console.info = console.debug = console.warn = console.trace = console.dir = console.dirxml = console.group = console.groupEnd = console.time = console.timeEnd = console.assert = console.profile = function() {};
 	}
 
+	console.log(util.div('projectFmessage').innerHTML);
 
 	if( flf_config.package.indexOf('http')===0)
 	{
@@ -39,6 +40,8 @@ util,buildinfo){
 		package.path = util.normalize_path(flf_config.package);
 		package.location = util.normalize_path(flf_config.root+flf_config.package);
 	}
+	console.log(package.path);
+	console.log(package.location);
 
 	//analytics
 	if( window.location.href.indexOf('http')===0)
@@ -51,6 +54,7 @@ util,buildinfo){
 		ga('send', 'pageview');
 	}
 
+	//util.div('window_caption_title').innerHTML = buildinfo.version;
 
 	var manager = new Manager(package, buildinfo);
 
